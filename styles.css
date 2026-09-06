@@ -494,5 +494,175 @@ button { font-family: inherit; cursor: pointer; }
   padding: 18px 20px;
   font-size: 14px;
   color: var(--ink-soft);
+  /* =========================================
+   VYRO — Premium Hero Upgrade
+   ========================================= */
+
+.hero-content {
+  max-width: 620px;
+  position: relative;
+  z-index: 2;
+}
+
+.hero-eyebrow {
+  display: inline-block;
+  margin-bottom: 18px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.hero h1 {
+  font-size: clamp(52px, 7vw, 92px);
+  line-height: 0.94;
+  letter-spacing: -0.055em;
+  margin: 0 0 26px;
+  font-weight: 800;
+}
+
+.hero h1 span {
+  opacity: 0.55;
+}
+
+.hero .lead {
+  max-width: 560px;
+  font-size: 18px;
+  line-height: 1.65;
+  margin-bottom: 32px;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hero-note {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 26px;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.55;
+}
+
+.hero-note span {
+  white-space: nowrap;
+}
+
+.hero-visual {
+  position: relative;
+  min-height: 480px;
+}
+
+/* Give the product covers a more premium layered feel */
+.hero-visual .cover {
+  position: absolute;
+  width: 230px;
+  min-height: 310px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.16);
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.hero-visual .cover:hover {
+  transform: translateY(-10px) rotate(0deg) !important;
+  box-shadow: 0 32px 75px rgba(0, 0, 0, 0.22);
+}
+
+.hero-visual .cover:nth-child(1) {
+  left: 4%;
+  top: 80px;
+  transform: rotate(-8deg);
+  z-index: 1;
+}
+
+.hero-visual .cover:nth-child(2) {
+  left: 27%;
+  top: 15px;
+  transform: rotate(2deg);
+  z-index: 3;
+}
+
+.hero-visual .cover:nth-child(3) {
+  left: 50%;
+  top: 95px;
+  transform: rotate(8deg);
+  z-index: 2;
+}
+
+/* Mobile */
+@media (max-width: 800px) {
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 50px;
+  }
+
+  .hero h1 {
+    font-size: clamp(48px, 15vw, 72px);
+  }
+
+  .hero .lead {
+    font-size: 16px;
+  }
+
+  .hero-visual {
+    min-height: 390px;
+    max-width: 500px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .hero-visual .cover {
+    width: 180px;
+    min-height: 250px;
+  }
+
+  .hero-visual .cover:nth-child(1) {
+    left: 0;
+    top: 70px;
+  }
+
+  .hero-visual .cover:nth-child(2) {
+    left: 25%;
+    top: 0;
+  }
+
+  .hero-visual .cover:nth-child(3) {
+    left: 50%;
+    top: 75px;
+  }
+}
+
+@media (max-width: 520px) {
+  .hero-visual {
+    min-height: 330px;
+  }
+
+  .hero-visual .cover {
+    width: 145px;
+    min-height: 210px;
+  }
+
+  .hero-visual .cover:nth-child(1) {
+    left: 0;
+  }
+
+  .hero-visual .cover:nth-child(2) {
+    left: 24%;
+  }
+
+  .hero-visual .cover:nth-child(3) {
+    left: 48%;
+  }
+
+  .hero-note {
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+}
   background: var(--paper-raised);
 }
