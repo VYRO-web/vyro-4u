@@ -666,3 +666,16 @@ button { font-family: inherit; cursor: pointer; }
 }
   background: var(--paper-raised);
 }
+.hero-image-cover {
+  overflow: hidden;
+  padding: 0 !important;
+  background: none !important;
+}
+
+.hero-image-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
