@@ -194,15 +194,7 @@
       </div>
     </div>`;
 }
-          </div>
-          <div class="product-actions">
-            <a href="product.html?id=${p.id}" class="btn btn-ghost btn-sm">View Product</a>
-            <button class="btn btn-primary btn-sm" onclick="VyroCart.add('${p.id}')">Add to Cart</button>
-          </div>
-        </div>
-      </div>`;
-  }
-
+          
   function renderChips() {
     const cats = [{ slug: "all", name: "All" }].concat(VYRO_CATEGORIES.map(function (c) { return { slug: c.slug, name: c.name }; }));
     document.getElementById("categoryChips").innerHTML = cats.map(function (c) {
