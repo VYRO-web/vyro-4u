@@ -135,28 +135,65 @@
   }
 
   function productCardHTML(p) {
-    const cat = vyroGetCategory(p.category);
-    let badges = "";
-    if (p.oldPrice) badges += '<span class="badge badge-sale">Sale</span>';
-    else if (p.isNew) badges += '<span class="badge">New</span>';
-    else if (p.bestseller) badges += '<span class="badge">Bestseller</span>';
-    return `
-      <div class="product-card">
-        <a href="product.html?id=${p.id}" style="position:relative;">
-          <div class="cover cover--${p.category}">
-            <div class="badge-row">${badges}</div>
-            <span class="cover-cat">${p.subcategory}</span>
-            <h3 class="cover-title">${p.name}</h3>
-          </div>
+  const cat = vyroGetCategory(p.category);
+
+  let badges = "";
+  if (p.oldPrice) badges += '<span class="badge badge-sale">Sale</span>';
+  else if (p.isNew) badges += '<span class="badge">New</span>';
+  else if (p.bestseller) badges += '<span class="badge">Bestseller</span>';
+
+  let image = "";
+
+  if (p.id === "calisthenics-8week") {
+    image = '<img src="calisthenics-cover.png" alt="VYRO 8-Week Calisthenics Starter System">';
+  } else if (p.id === "high-protein-50") {
+    image = '<img src="food-cover.png" alt="VYRO 50 High-Protein Recipes">';
+  } else if (p.id === "mens-style-guide") {
+    image = '<img src="style-cover.png" alt="VYRO Ultimate Men\'s Style Guide">';
+  }
+
+  return `
+    <div class="product-card">
+      <a href="product.html?id=${p.id}" style="position:relative;">
+        <div class="cover cover--${p.category} ${image ? "product-image-cover" : ""}">
+          <div class="badge-row">${badges}</div>
+          ${
+            image
+              ? image
+              : `
+                <span class="cover-cat">${p.subcategory}</span>
+                <h3 class="cover-title">${p.name}</h3>
+              `
+          }
+        </div>
+      </a>
+
+      <div class="product-body">
+        <span class="product-cat">${cat ? cat.name : ""}</span>
+
+        <a href="product.html?id=${p.id}">
+          <h3 class="product-name">${p.name}</h3>
         </a>
-        <div class="product-body">
-          <span class="product-cat">${cat ? cat.name : ""}</span>
-          <a href="product.html?id=${p.id}"><h3 class="product-name">${p.name}</h3></a>
-          <p class="product-desc">${p.shortDesc}</p>
-          <div class="product-rating"><span class="stars">${renderStars(p.rating)}</span> ${p.rating} (${p.reviewCount})</div>
-          <div class="product-price-row">
-            <span class="price-now">${vyroFormatPrice(p.price)}</span>
-            ${p.oldPrice ? `<span class="price-old">${vyroFormatPrice(p.oldPrice)}</span>` : ""}
+
+        <p class="product-desc">${p.shortDesc}</p>
+
+        <div class="product-rating">
+          <span class="stars">${renderStars(p.rating)}</span>
+          ${p.rating} (${p.reviewCount})
+        </div>
+
+        <div class="product-price-row">
+          <span class="price-now">${vyroFormatPrice(p.price)}</span>
+          ${p.oldPrice ? `<span class="price-old">${vyroFormatPrice(p.oldPrice)}</span>` : ""}
+        </div>
+
+        <div class="product-actions">
+          <a href="product.html?id=${p.id}" class="btn btn-ghost btn-sm">View Product</a>
+          <button class="btn btn-primary btn-sm" onclick="VyroCart.add('${p.id}')">Add to Cart</button>
+        </div>
+      </div>
+    </div>`;
+}
           </div>
           <div class="product-actions">
             <a href="product.html?id=${p.id}" class="btn btn-ghost btn-sm">View Product</a>
