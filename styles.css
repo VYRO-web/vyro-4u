@@ -494,7 +494,10 @@ button { font-family: inherit; cursor: pointer; }
   padding: 18px 20px;
   font-size: 14px;
   color: var(--ink-soft);
-  /* =========================================
+  background: var(--paper-raised);
+}
+
+/* =========================================
    VYRO — Premium Hero Upgrade
    ========================================= */
 
@@ -664,8 +667,6 @@ button { font-family: inherit; cursor: pointer; }
     flex-wrap: wrap;
   }
 }
-  background: var(--paper-raised);
-}
 .hero-image-cover {
   overflow: hidden;
   padding: 0 !important;
@@ -691,3 +692,22 @@ button { font-family: inherit; cursor: pointer; }
   object-fit: cover;
   object-position: center;
 }
+
+/* VYRO account */
+.auth-page { min-height: 68vh; display: grid; place-items: center; padding-top: 72px; padding-bottom: 72px; }
+.auth-card { width: min(100%, 560px); background: var(--paper-raised); border: 1px solid var(--line); border-radius: var(--radius-l); padding: clamp(24px, 5vw, 44px); }
+.auth-intro h1, .account-card h1 { margin: 12px 0 12px; font-size: clamp(36px, 7vw, 56px); line-height: .98; letter-spacing: -0.04em; }
+.auth-intro p, .account-card p { color: var(--ink-soft); line-height: 1.6; }
+.auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 28px 0 18px; padding: 5px; border: 1px solid var(--line); border-radius: 999px; }
+.auth-tab { border: 0; border-radius: 999px; padding: 11px 14px; background: transparent; color: var(--ink-soft); font: inherit; font-weight: 700; cursor: pointer; }
+.auth-tab.active { background: var(--ink); color: var(--paper); }
+.auth-form { display: grid; gap: 16px; }
+.auth-form label { display: grid; gap: 7px; font-size: 13px; font-weight: 700; }
+.auth-form input { width: 100%; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); color: var(--ink); padding: 13px 14px; font: inherit; outline: none; }
+.auth-form input:focus { border-color: var(--ink); }
+.auth-status { min-height: 22px; margin-bottom: 12px; font-size: 14px; color: var(--ink-soft); }
+.auth-status.error { color: #9e2d2d; }
+.auth-status.success { color: #23623a; }
+.auth-help { margin: 0; text-align: center; color: var(--ink-soft); font-size: 12px; line-height: 1.5; }
+.auth-account-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 26px; }
+@media (max-width: 800px) { .auth-page { padding-top: 42px; padding-bottom: 42px; } }

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Account — VYRO</title>
+<meta name="description" content="Create or access your VYRO account.">
+<link rel="stylesheet" href="styles.css">
+
+<script>!function(w,d,s,u,n,a,b){if(w[n])return;a=w[n]={q:[],t:+new Date,s:[],o:u,track:function(){a.q.push([+new Date].concat([].slice.call(arguments)))},setScope:function(){a.s=[].slice.call(arguments).filter(function(x){return typeof x==="string"});a.q.push([+new Date,"setScope"].concat(a.s))},scope:function(){var c=[].slice.call(arguments);return{track:function(){a.q.push([+new Date].concat([].slice.call(arguments)).concat([{__scope:c}]))}}}};b=d.createElement(s);b.async=1;b.src=u+"/s.js";d.getElementsByTagName(s)[0].parentNode.insertBefore(b,d.getElementsByTagName(s)[0])}(window,document,"script","https://t.whop.tw","whop");whop.setScope("biz_n3wqxoq4XFfxzb");whop.track("page");</script>
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap nav">
+    <a href="index.html" class="logo">VYRO</a>
+    <nav class="nav-links">
+      <a href="shop.html">Shop</a>
+      <a href="shop.html?category=fitness">Fitness</a>
+      <a href="shop.html?category=food-nutrition">Food &amp; Nutrition</a>
+      <a href="shop.html?category=style">Style</a>
+      <a href="shop.html?category=self-improvement">Self-Improvement</a>
+    </nav>
+    <div class="nav-tools">
+      <a href="account.html" class="btn btn-ghost btn-sm" data-account-link>Account</a>
+    </div>
+  </div>
+</header>
+
+<main class="auth-page wrap">
+  <section class="auth-card" id="authPanel">
+    <div class="auth-intro">
+      <span class="hero-eyebrow">VYRO ACCOUNT</span>
+      <h1>Your VYRO, saved.</h1>
+      <p>Create an account to keep your VYRO identity in one place. More member features can be added here later.</p>
+    </div>
+
+    <div class="auth-tabs" role="tablist" aria-label="Account actions">
+      <button type="button" class="auth-tab active" data-auth-tab="signup">Create account</button>
+      <button type="button" class="auth-tab" data-auth-tab="login">Sign in</button>
+    </div>
+
+    <div id="authStatus" class="auth-status" aria-live="polite"></div>
+
+    <form id="signupForm" class="auth-form">
+      <label>Display name
+        <input name="name" type="text" autocomplete="name" placeholder="Your name">
+      </label>
+      <label>Email
+        <input name="email" type="email" autocomplete="email" required placeholder="you@example.com">
+      </label>
+      <label>Password
+        <input name="password" type="password" autocomplete="new-password" minlength="8" required placeholder="At least 8 characters">
+      </label>
+      <button class="btn btn-primary btn-block" type="submit">Create account</button>
+      <p class="auth-help">By creating an account, you agree to VYRO's Terms and Privacy Policy.</p>
+    </form>
+
+    <form id="loginForm" class="auth-form" hidden>
+      <label>Email
+        <input name="email" type="email" autocomplete="email" required placeholder="you@example.com">
+      </label>
+      <label>Password
+        <input name="password" type="password" autocomplete="current-password" required placeholder="Your password">
+      </label>
+      <button class="btn btn-primary btn-block" type="submit">Sign in</button>
+    </form>
+  </section>
+
+  <section class="auth-card account-card" id="accountPanel" hidden>
+    <span class="hero-eyebrow">SIGNED IN</span>
+    <h1>Welcome back.</h1>
+    <p>You are signed in as <strong id="accountEmail"></strong>.</p>
+    <div class="auth-account-actions">
+      <a href="shop.html" class="btn btn-primary">Browse VYRO</a>
+      <button type="button" id="logoutBtn" class="btn btn-secondary">Sign out</button>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-bottom">
+      <span>© 2026 VYRO. All rights reserved.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="auth.js"></script>
+<script src="account.js"></script>
+</body>
+</html>
