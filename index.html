@@ -82,14 +82,14 @@
 
   <div class="hero-visual" aria-hidden="true">
     <div class="cover cover--fitness hero-image-cover">
-  <img src="calisthenics-cover.png" alt="VYRO 8-Week Calisthenics Starter System">
+  <img src="calisthenics-cover.png" alt="VYRO 8-Week Calisthenics Starter System" decoding="async" fetchpriority="high">
 </div>
 <div class="cover cover--style hero-image-cover">
-  <img src="style-cover.png" alt="VYRO Ultimate Men's Style Guide">
+  <img src="style-cover.png" alt="VYRO Ultimate Men's Style Guide" decoding="async">
 </div>
     
     <div class="cover cover--food-nutrition hero-image-cover">
-  <img src="food-cover.png" alt="VYRO 50 High-Protein Recipes">
+  <img src="food-cover.png" alt="VYRO 50 High-Protein Recipes" decoding="async">
 </div>
   </div>
 </section>
@@ -162,6 +162,7 @@
 
   function productCardHTML(p) {
     const cat = vyroGetCategory(p.category);
+    const image = vyroGetProductCoverImage(p.id);
     let badges = "";
     if (p.oldPrice) badges += '<span class="badge badge-sale">Sale</span>';
     else if (p.isNew) badges += '<span class="badge">New</span>';
@@ -169,10 +170,9 @@
     return `
       <div class="product-card">
         <a href="product.html?id=${p.id}" style="position:relative;">
-          <div class="cover cover--${p.category}">
+          <div class="cover cover--${p.category} ${image ? "product-image-cover" : ""}">
             <div class="badge-row">${badges}</div>
-            <span class="cover-cat">${p.subcategory}</span>
-            <h3 class="cover-title">${p.name}</h3>
+            ${image ? `<img src="${image}" alt="${p.name}" loading="lazy" decoding="async">` : `<span class="cover-cat">${p.subcategory}</span><h3 class="cover-title">${p.name}</h3>`}
           </div>
         </a>
         <div class="product-body">
@@ -211,5 +211,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="auth.js"></script>
+<script src="motion.js"></script>
 </body>
 </html>

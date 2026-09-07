@@ -332,3 +332,17 @@ function vyroGetCategory(slug) {
 function vyroGetProduct(id) {
   return VYRO_PRODUCTS.find(function (p) { return p.id === id; });
 }
+
+function vyroGetProductCoverImage(id) {
+  const images = {
+    "calisthenics-8week": "calisthenics-cover.png",
+    "high-protein-50": "food-cover.png",
+    "mens-style-guide": "style-cover.png",
+    "habit-reset": "habit-cover.png",
+    "home-workout-30": "workout-cover.png",
+    "meal-prep-system": "meal-cover.png",
+    "womens-style-capsule": "wardrobe-cover.png",
+    "deep-work-system": "productivity-cover.png"
+  };
+  return images[id] || "";
+}

@@ -50,14 +50,14 @@ const VyroCart = (function () {
 document.addEventListener("DOMContentLoaded", function () {
   VyroCart.render();
 
-  const searchForm = document.querySelector("[data-search-form]");
-  if (searchForm) {
+  document.querySelectorAll("[data-search-form]").forEach(function (searchForm) {
     searchForm.addEventListener("submit", function (e) {
       e.preventDefault();
-      const q = searchForm.querySelector("input").value.trim();
+      const input = searchForm.querySelector("input");
+      const q = input ? input.value.trim() : "";
       window.location.href = "shop.html" + (q ? "?q=" + encodeURIComponent(q) : "");
     });
-  }
+  });
 
   const menuToggle = document.querySelector("[data-menu-toggle]");
   const mobileNav = document.querySelector("[data-mobile-nav]");

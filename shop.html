@@ -46,6 +46,12 @@
       <a href="shop.html?category=food-nutrition">Food &amp; Nutrition</a>
       <a href="shop.html?category=style">Style</a>
       <a href="shop.html?category=self-improvement">Self-Improvement</a>
+      <form class="search-box" data-search-form>
+        <input type="text" placeholder="Search guides..." aria-label="Search products">
+        <button type="submit" aria-label="Search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+      </form>
     </div>
   </div>
 </header>
@@ -146,15 +152,8 @@
   else if (p.isNew) badges += '<span class="badge">New</span>';
   else if (p.bestseller) badges += '<span class="badge">Bestseller</span>';
 
-  let image = "";
-
-  if (p.id === "calisthenics-8week") {
-    image = '<img src="calisthenics-cover.png" alt="VYRO 8-Week Calisthenics Starter System">';
-  } else if (p.id === "high-protein-50") {
-    image = '<img src="food-cover.png" alt="VYRO 50 High-Protein Recipes">';
-  } else if (p.id === "mens-style-guide") {
-    image = '<img src="style-cover.png" alt="VYRO Ultimate Men\'s Style Guide">';
-  }
+  const imageFile = vyroGetProductCoverImage(p.id);
+  const image = imageFile ? `<img src="${imageFile}" alt="${p.name}" loading="lazy" decoding="async">` : "";
 
   return `
     <div class="product-card">
@@ -254,5 +253,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="auth.js"></script>
+<script src="motion.js"></script>
 </body>
 </html>

@@ -46,6 +46,12 @@
       <a href="shop.html?category=food-nutrition">Food &amp; Nutrition</a>
       <a href="shop.html?category=style">Style</a>
       <a href="shop.html?category=self-improvement">Self-Improvement</a>
+      <form class="search-box" data-search-form>
+        <input type="text" placeholder="Search guides..." aria-label="Search products">
+        <button type="submit" aria-label="Search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+      </form>
     </div>
   </div>
 </header>
@@ -101,12 +107,12 @@
 
   function relatedCardHTML(p) {
     const cat = vyroGetCategory(p.category);
+    const image = vyroGetProductCoverImage(p.id);
     return `
       <div class="product-card">
         <a href="product.html?id=${p.id}">
-          <div class="cover cover--${p.category}">
-            <span class="cover-cat">${p.subcategory}</span>
-            <h3 class="cover-title">${p.name}</h3>
+          <div class="cover cover--${p.category} ${image ? "product-image-cover" : ""}">
+            ${image ? `<img src="${image}" alt="${p.name}" loading="lazy" decoding="async">` : `<span class="cover-cat">${p.subcategory}</span><h3 class="cover-title">${p.name}</h3>`}
           </div>
         </a>
         <div class="product-body">
@@ -124,6 +130,7 @@
   const id = new URLSearchParams(window.location.search).get("id");
   const product = vyroGetProduct(id) || VYRO_PRODUCTS[0];
   const cat = vyroGetCategory(product.category);
+  const productImage = vyroGetProductCoverImage(product.id);
 
   document.getElementById("pageTitle").textContent = product.name + " — VYRO";
   document.getElementById("pageDesc").setAttribute("content", product.shortDesc);
@@ -150,9 +157,8 @@
   document.getElementById("productRoot").innerHTML = `
     <section class="product-hero">
       <div>
-        <div class="cover cover--${product.category}">
-          <span class="cover-cat">${product.subcategory}</span>
-          <h3 class="cover-title">${product.name}</h3>
+        <div class="cover cover--${product.category} ${productImage ? "product-image-cover" : ""}">
+          ${productImage ? `<img src="${productImage}" alt="${product.name}" decoding="async" fetchpriority="high">` : `<span class="cover-cat">${product.subcategory}</span><h3 class="cover-title">${product.name}</h3>`}
         </div>
       </div>
       <div>
@@ -239,5 +245,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="auth.js"></script>
+<script src="motion.js"></script>
 </body>
 </html>

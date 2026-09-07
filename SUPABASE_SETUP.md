@@ -1,15 +1,12 @@
 # VYRO Supabase Auth setup
 
-1. Create a Supabase project at https://supabase.com/dashboard.
-2. Open the project, then copy the Project URL and the public publishable/anon key from Project Settings / API.
-3. Open `supabase-config.js` and replace:
-   - `YOUR_SUPABASE_PROJECT_URL`
-   - `YOUR_SUPABASE_PUBLISHABLE_KEY`
-4. In Supabase Authentication URL configuration, set:
-   - Site URL: `https://vyro-4u.netlify.app`
-   - Redirect URL: `https://vyro-4u.netlify.app/account.html`
-5. Keep email/password auth enabled.
-6. Deploy the changed files to GitHub/Netlify.
-7. Visit `/account.html`, create a test account, and then verify `complete_registration` in Whop.
+The frontend is already configured with the project's public Supabase URL and browser-safe publishable key in `supabase-config.js`.
 
-Security: never put a Supabase `service_role` or secret key in this static website. Only the public publishable/anon key belongs in `supabase-config.js`.
+In Supabase → Authentication → URL Configuration, use:
+
+- Site URL: `https://vyro-4u.pages.dev`
+- Redirect URL: `https://vyro-4u.pages.dev/account.html`
+
+Email/password signup and sign-in are handled by `account.js`. A successful new account creation fires the Whop Pixel `complete_registration` event.
+
+Never place a Supabase secret/service-role key in this repository.
