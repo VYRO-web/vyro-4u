@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Store administration — VYRO</title>
+  <meta name="description" content="Manage the VYRO catalog, files and software releases.">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin-page">
+  <a class="admin-skip" href="#adminMain">Skip to store administration</a>
+  <header class="site-header">
+    <div class="admin-wrap admin-topbar">
+      <a class="logo" href="index.html" aria-label="VYRO home">VYRO</a>
+      <span class="admin-wordmark">Store administration</span>
+      <div class="admin-top-actions">
+        <a class="btn btn-ghost btn-sm" href="shop.html">View store <span aria-hidden="true">↗</span></a>
+        <a class="btn btn-ghost btn-sm" href="account.html" data-account-link>Account</a>
+      </div>
+    </div>
+  </header>
+  <main class="admin-wrap" id="adminMain">
+    <section class="admin-gate admin-card" id="adminGate" aria-labelledby="gateTitle">
+      <span class="hero-eyebrow">VYRO ADMIN</span>
+      <h1 id="gateTitle">Your store, in focus.</h1>
+      <p id="gateMessage" role="status">Checking your account and store permissions…</p>
+      <a id="adminSignIn" class="btn btn-primary" href="account.html?mode=login&amp;returnTo=%2Fadmin.html" hidden>Sign in to continue</a>
+      <button id="retryAdmin" type="button" class="btn btn-secondary" hidden>Try again</button>
+      <p class="admin-help">Store management requires an administrator account.</p>
+    </section>
+    <div id="adminShell" class="admin-shell" hidden>
+      <nav class="admin-sidebar" aria-label="Store management">
+        <p class="admin-nav-label">WORKSPACE</p>
+        <button type="button" class="admin-nav-item" data-panel="overview" aria-current="page"><span aria-hidden="true">◈</span> Overview</button>
+        <button type="button" class="admin-nav-item" data-panel="products"><span aria-hidden="true">▦</span> Products</button>
+        <button type="button" class="admin-nav-item" data-panel="categories"><span aria-hidden="true">≡</span> Categories</button>
+        <button type="button" class="admin-nav-item" data-panel="orders"><span aria-hidden="true">↗</span> Recent orders</button>
+        <div class="admin-sidebar-note"><span class="admin-live-dot" aria-hidden="true"></span> Store data<br><small id="lastUpdated">Loading…</small></div>
+      </nav>
+      <div class="admin-content">
+        <div class="admin-heading">
+          <div><p class="admin-kicker">VYRO / YOUR WORKSPACE</p><h1 id="panelTitle" tabindex="-1">Overview</h1><p id="panelDescription">A clear view of your catalog and purchases.</p></div>
+          <button type="button" class="btn btn-primary" id="newProduct">+ New product</button>
+        </div>
+        <div id="adminMessage" class="admin-message" role="status" aria-live="polite" hidden></div>
+        <section id="panelOverview" aria-labelledby="overviewTitle">
+          <h2 id="overviewTitle" class="admin-sr-only">Store overview</h2>
+          <div id="overviewStats" class="admin-stats"></div>
+          <div class="admin-two-col">
+            <section class="admin-card"><div class="admin-section-head"><h2>Before you publish</h2><span class="admin-chip">READINESS</span></div><div id="readinessOverview"></div><button type="button" class="admin-text-button" data-go="products">Review products <span aria-hidden="true">→</span></button></section>
+            <section class="admin-card"><div class="admin-section-head"><h2>Revenue by currency</h2></div><div id="revenueOverview"></div><p class="admin-help">Recorded paid orders, shown separately for each currency. Refunds and provider fees may affect settlement.</p></section>
+          </div>
+          <section class="admin-card admin-recent"><div class="admin-section-head"><h2>Recent purchases</h2><button type="button" class="admin-text-button" data-go="orders">View recent orders →</button></div><div id="recentPurchases"></div></section>
+        </section>
+        <section id="panelProducts" aria-labelledby="productsTitle" hidden>
+          <h2 id="productsTitle" class="admin-sr-only">Product manager</h2>
+          <form id="productFilters" class="admin-toolbar">
+            <label class="admin-search">Search products<input type="search" name="q" placeholder="Name or slug" maxlength="100"></label>
+            <label>Status<select name="status"><option value="">All statuses</option><option value="active">Active</option><option value="coming_soon">Coming soon</option><option value="draft">Draft</option><option value="archived">Archived</option></select></label>
+            <label>Product type<select name="product_type"><option value="">All types</option><option value="digital_file">Digital files</option><option value="software">Software</option><option value="bundle">Bundles</option><option value="external_access">External access</option></select></label>
+            <button type="submit" class="btn btn-secondary btn-sm">Apply</button>
+          </form>
+          <div id="productList" class="admin-product-list" aria-live="polite"></div>
+          <div class="admin-pagination"><button type="button" id="previousProducts" class="btn btn-ghost btn-sm" disabled>← Previous</button><span id="productPage">Page 1</span><button type="button" id="nextProducts" class="btn btn-ghost btn-sm" disabled>Next →</button></div>
+        </section>
+        <section id="panelCategories" aria-labelledby="categoriesTitle" hidden>
+          <div class="admin-section-head"><h2 id="categoriesTitle">Your categories</h2><button class="btn btn-secondary btn-sm" type="button" id="newCategory">+ New category</button></div>
+          <p class="admin-help admin-space-after">Active categories appear in store navigation and filters. Use a parent category to create a nested category.</p>
+          <div id="categoryList" class="admin-category-list"></div>
+        </section>
+        <section id="panelOrders" aria-labelledby="ordersTitle" hidden>
+          <section class="admin-card"><div class="admin-section-head"><h2 id="ordersTitle">Recent orders</h2><button class="btn btn-ghost btn-sm" type="button" id="refreshOrders">Refresh</button></div><p class="admin-help admin-space-after">Latest orders reported by the store. Purchases retain their original prices and currency.</p><div id="orderList"></div></section>
+          <section class="admin-card admin-recent"><div class="admin-section-head"><h2>Verify a delayed payment</h2></div><p class="admin-help admin-space-after">If a real Whop payment has not reached the store, copy its payment ID to recheck it. The server verifies Whop's record against the original order before updating access.</p><form id="reconcileForm" class="admin-form"><label class="admin-field">Whop payment ID<input name="payment_id" type="text" required maxlength="150" autocomplete="off" placeholder="Copy the ID from the actual Whop payment"></label><div><button class="btn btn-secondary btn-sm" type="submit">Verify payment</button></div></form></section>
+        </section>
+      </div>
+    </div>
+    <noscript><div class="admin-card">Enable JavaScript to manage your store. Sign-in and secure store APIs are required.</div></noscript>
+  </main>
+
+  <dialog id="productDialog" class="admin-dialog" aria-labelledby="productDialogTitle">
+    <div class="admin-dialog-heading"><div><p class="admin-kicker">PRODUCT WORKSPACE</p><h2 id="productDialogTitle">New product</h2></div><button type="button" class="admin-close" data-close="productDialog" aria-label="Close product editor">×</button></div>
+    <div id="productMessage" class="admin-message" role="status" aria-live="polite" hidden></div>
+    <div id="productEditor"></div>
+    <div class="admin-dialog-actions"><button type="button" class="btn btn-ghost btn-sm" id="previewProduct">Preview</button><button type="button" class="btn btn-ghost btn-sm" id="duplicateProduct" hidden>Duplicate as draft</button><button type="button" class="btn btn-ghost btn-sm" id="archiveProduct" hidden>Archive</button><button type="submit" form="productForm" class="btn btn-primary" id="saveProduct">Save product</button></div>
+  </dialog>
+  <dialog id="categoryDialog" class="admin-dialog admin-dialog-small" aria-labelledby="categoryDialogTitle">
+    <div class="admin-dialog-heading"><h2 id="categoryDialogTitle">New category</h2><button type="button" class="admin-close" data-close="categoryDialog" aria-label="Close category editor">×</button></div>
+    <div id="categoryMessage" class="admin-message" role="status" aria-live="polite" hidden></div>
+    <form id="categoryForm" class="admin-form"></form>
+    <div class="admin-dialog-actions"><button class="btn btn-primary" type="submit" form="categoryForm">Save category</button></div>
+  </dialog>
+  <dialog id="previewDialog" class="admin-dialog admin-dialog-small" aria-labelledby="previewTitle">
+    <div class="admin-dialog-heading"><h2 id="previewTitle">Product preview</h2><button type="button" class="admin-close" data-close="previewDialog" aria-label="Close preview">×</button></div>
+    <div id="previewBody"></div>
+  </dialog>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

@@ -1,130 +1,38 @@
-(function () {
-  const status = document.getElementById("authStatus");
-  const authPanel = document.getElementById("authPanel");
-  const accountPanel = document.getElementById("accountPanel");
-  const userEmail = document.getElementById("accountEmail");
-  const signupForm = document.getElementById("signupForm");
-  const loginForm = document.getElementById("loginForm");
-  const logoutBtn = document.getElementById("logoutBtn");
-  const tabs = document.querySelectorAll("[data-auth-tab]");
-
-  function message(text, type) {
-    status.textContent = text || "";
-    status.className = "auth-status" + (type ? " " + type : "");
-  }
-
-  function showTab(name) {
-    tabs.forEach(function (tab) { tab.classList.toggle("active", tab.dataset.authTab === name); });
-    signupForm.hidden = name !== "signup";
-    loginForm.hidden = name !== "login";
-    message("");
-  }
-
-  async function refresh() {
-    if (!window.VyroAuth.configured()) {
-      message("Supabase still needs to be connected. Add your Project URL and public publishable key to supabase-config.js.", "error");
-      authPanel.hidden = false;
-      accountPanel.hidden = true;
-      return;
-    }
-
-    const { data } = await window.VyroAuth.client().auth.getSession();
-    const user = data && data.session && data.session.user;
-    authPanel.hidden = !!user;
-    accountPanel.hidden = !user;
-    if (user) userEmail.textContent = user.email || "Signed in";
-  }
-
-  tabs.forEach(function (tab) {
-    tab.addEventListener("click", function () { showTab(tab.dataset.authTab); });
-  });
-
-  signupForm.addEventListener("submit", async function (event) {
-    event.preventDefault();
-    message("Creating your account…");
-
-    const form = new FormData(signupForm);
-    const name = String(form.get("name") || "").trim();
-    const email = String(form.get("email") || "").trim();
-    const password = String(form.get("password") || "");
-
-    if (password.length < 8) {
-      message("Use a password with at least 8 characters.", "error");
-      return;
-    }
-
-    try {
-      const { data, error } = await window.VyroAuth.client().auth.signUp({
-        email: email,
-        password: password,
-        options: {
-          data: { display_name: name },
-          emailRedirectTo: window.location.origin + "/account.html"
-        }
-      });
-
-      if (error) throw error;
-      if (!data || !data.user) throw new Error("Supabase did not return a new user.");
-
-      // With email confirmation enabled, Supabase can return an obfuscated user
-      // for an email that is already registered. Its identities array is empty.
-      // Do not count that as a new Whop registration conversion.
-      if (Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-        signupForm.reset();
-        message("If an account with that email already exists, sign in or check your inbox.", "success");
-        return;
-      }
-
-      if (window.whop && typeof window.whop.track === "function") {
-        window.whop.track("complete_registration", {
-          event_id: "registration_" + data.user.id,
-          email: email,
-          name: name || undefined,
-          external_id: data.user.id
-        });
-      }
-
-      signupForm.reset();
-      if (data.session) {
-        message("Account created. You are signed in.", "success");
-        await refresh();
-      } else {
-        message("Account created. Check your email to confirm your address, then sign in.", "success");
-      }
-    } catch (error) {
-      message(error.message || "Could not create your account.", "error");
-    }
-  });
-
-  loginForm.addEventListener("submit", async function (event) {
-    event.preventDefault();
-    message("Signing you in…");
-    const form = new FormData(loginForm);
-
-    try {
-      const { error } = await window.VyroAuth.client().auth.signInWithPassword({
-        email: String(form.get("email") || "").trim(),
-        password: String(form.get("password") || "")
-      });
-      if (error) throw error;
-      loginForm.reset();
-      message("Signed in.", "success");
-      await refresh();
-    } catch (error) {
-      message(error.message || "Could not sign in.", "error");
-    }
-  });
-
-  logoutBtn.addEventListener("click", async function () {
-    try {
-      await window.VyroAuth.client().auth.signOut();
-      message("Signed out.", "success");
-      showTab("login");
-      await refresh();
-    } catch (error) {
-      message(error.message || "Could not sign out.", "error");
-    }
-  });
-
-  window.addEventListener("load", refresh);
+(function(){
+  'use strict';
+  const S=VyroStore,$=id=>document.getElementById(id),tabs=document.querySelectorAll('[data-auth-tab]');let recovery=false,lastUser=null,refreshCount=0,libraryPage=1,libraryGeneration=0;
+  function message(text,type=''){ $('authStatus').textContent=text||'';$('authStatus').className='auth-status '+type;}
+  function showTab(name){tabs.forEach(t=>{t.classList.toggle('active',t.dataset.authTab===name);t.setAttribute('aria-pressed',String(t.dataset.authTab===name));});for(const id of['signup','login','recover','password'])$(id+'Form').hidden=id!==name;message('');}
+  function returnPath(){try{const value=new URLSearchParams(location.search).get('returnTo');if(!value)return null;const u=new URL(value,location.origin);return u.origin===location.origin&&['/admin.html','/admin','/product.html','/product','/cart.html','/cart','/checkout-success.html','/checkout-success'].includes(u.pathname)?u.pathname+u.search:null;}catch{return null;}}
+  function clearPrivate(){libraryGeneration++;$('libraryRoot').innerHTML='';$('ordersRoot').innerHTML='';$('accountEmail').textContent='';}
+  async function library(){const generation=++libraryGeneration,root=$('libraryRoot');let requestedUser;root.innerHTML='<p role="status">Loading your purchases…</p>';$('ordersRoot').innerHTML='';try{requestedUser=(await S.session())?.user?.id;if(!requestedUser||generation!==libraryGeneration)return;const data=await S.request('/api/library?page='+libraryPage);const currentUser=(await S.session())?.user?.id;if(generation!==libraryGeneration||currentUser!==requestedUser)return;$('libraryPageLabel').textContent='Page '+libraryPage;$('previousLibrary').disabled=libraryPage===1;$('nextLibrary').disabled=!data.has_more;
+    root.innerHTML=(data.entitlements||[]).map(e=>{const p=e.product||{},active=e.status==='active'&&(!e.expires_at||new Date(e.expires_at)>new Date()),releases=e.releases||[],assets=e.assets||[];
+      const downloads=active?(p.product_type==='external_access'?`<button class="btn btn-primary btn-sm" data-open-product="${S.escape(e.product_id)}">Open Product</button>`:p.product_type==='software'&&releases.length?releases.filter(r=>r.active).map(r=>`<button class="btn btn-primary btn-sm" data-download="${S.escape(r.asset_id||r.storage_asset_id)}">Download for ${S.escape(r.platform)} · ${S.escape(r.version)}</button>`).join(''):assets.map(a=>`<button class="btn btn-primary btn-sm" data-download="${S.escape(a.id)}">Download ${S.escape(a.display_name||a.original_filename||'file')}${a.version?' · '+S.escape(a.version):''}</button>`).join('')):'';
+      return `<article class="library-item">${p.cover_path?`<img src="${S.escape(S.safeURL(p.cover_path))}" alt="${S.escape(p.name)}" width="108" height="144" loading="lazy">`:''}<div><span class="badge">${active?'Owned':e.expires_at&&new Date(e.expires_at)<=new Date()?'Expired':S.escape(e.status)}</span><h3>${S.escape(p.name||'Purchased product')}</h3><p>${S.escape(VyroCatalog.typeLabel(p))} · ${S.escape(new Date(e.granted_at).toLocaleDateString())}</p><div class="library-downloads">${downloads||'<p>'+ (active?(p.product_type==='bundle'?'Your bundle products appear individually in this library.':'Files are temporarily unavailable. Please contact support.'):'Download access is not active for this purchase.')+'</p>'}</div></div></article>`;
+    }).join('')||'<div class="empty-state"><h2>Your library is waiting</h2><p>Confirmed purchases will appear here.</p><a class="btn btn-primary" href="shop.html">Explore VYRO</a></div>';
+    $('ordersRoot').innerHTML=(data.orders||[]).map(o=>`<details class="order-card"><summary>${S.escape(new Date(o.created_at).toLocaleDateString())} · ${S.escape(o.status)} · ${S.escape(S.money(o.total_amount,o.currency))}</summary><p>Order ${S.escape(o.id)}</p><ul>${(o.items||o.order_items||[]).map(i=>`<li>${S.escape(i.product_name)} — ${S.escape(S.money(i.unit_price,i.currency))}</li>`).join('')}</ul></details>`).join('')||'<p>No orders yet.</p>';
+  }catch(e){let currentUser;try{currentUser=(await S.session())?.user?.id;}catch{/* Fail closed below. */}if(generation!==libraryGeneration||currentUser!==requestedUser)return;root.innerHTML='<p class="notice">'+S.escape(e.message)+'</p>';$('ordersRoot').textContent='Order history is currently unavailable.';}}
+  async function refresh(){const current=++refreshCount;try{const s=await S.session();if(current!==refreshCount)return;const user=s?.user;if((user?.id||null)!==lastUser)clearPrivate();$('authPanel').hidden=!!user&&!recovery;$('accountPanel').hidden=!user||recovery;if(user){$('accountEmail').textContent=user.email||'Signed in';if(user.id!==lastUser&&!recovery){lastUser=user.id;libraryPage=1;await library();}}else{lastUser=null;clearPrivate();}}catch(e){if(current!==refreshCount)return;lastUser=null;clearPrivate();$('accountPanel').hidden=true;$('authPanel').hidden=false;message(e.message,'error');}}
+  async function submit(form,action){const b=form.querySelector('[type=submit]');b.disabled=true;try{await action(new FormData(form));}catch(e){message(e.message||'Please try again.','error');}finally{b.disabled=false;}}
+  tabs.forEach(t=>t.addEventListener('click',()=>showTab(t.dataset.authTab)));
+  $('signupForm').addEventListener('submit',e=>{e.preventDefault();submit(e.currentTarget,async f=>{message('Creating your account…');const name=String(f.get('name')||'').trim(),email=String(f.get('email')||'').trim();const{data,error}=await VyroAuth.client().auth.signUp({email,password:String(f.get('password')),options:{data:{display_name:name},emailRedirectTo:location.origin+'/account.html'+(returnPath()?'?returnTo='+encodeURIComponent(returnPath()):'')}});if(error)throw error;if(!data?.user)throw new Error('Account creation was not confirmed.');
+    // Supabase can obscure existing accounts by returning a user with no identities.
+    const isNew=Array.isArray(data.user.identities)&&data.user.identities.length>0;
+    if(isNew&&window.whop?.track)window.whop.track('complete_registration',{event_id:'registration_'+data.user.id,email,name:name||undefined,external_id:data.user.id});
+    $('signupForm').reset();message(isNew?'Account created. Check your email if confirmation is required.':'If an account exists, sign in or check your inbox.','success');if(data.session){await refresh();if(returnPath())location.assign(returnPath());}
+  });});
+  $('loginForm').addEventListener('submit',e=>{e.preventDefault();submit(e.currentTarget,async f=>{message('Signing you in…');const{error}=await VyroAuth.client().auth.signInWithPassword({email:String(f.get('email')).trim(),password:String(f.get('password'))});if(error)throw error;$('loginForm').reset();await refresh();if(returnPath())location.assign(returnPath());});});
+  $('forgotPassword').addEventListener('click',()=>showTab('recover'));
+  $('backToLogin').addEventListener('click',()=>showTab('login'));
+  $('recoverForm').addEventListener('submit',e=>{e.preventDefault();submit(e.currentTarget,async f=>{const{error}=await VyroAuth.client().auth.resetPasswordForEmail(String(f.get('email')).trim(),{redirectTo:location.origin+'/account.html?recovery=1'});if(error)throw error;message('If an account exists, a password reset email will arrive shortly.','success');});});
+  $('passwordForm').addEventListener('submit',e=>{e.preventDefault();submit(e.currentTarget,async f=>{const{error}=await VyroAuth.client().auth.updateUser({password:String(f.get('password'))});if(error)throw error;recovery=false;history.replaceState(null,'','/account.html');await refresh();S.notice('Your password was updated.');});});
+  $('logoutBtn').addEventListener('click',async()=>{try{const{error}=await VyroAuth.client().auth.signOut();if(error)throw error;lastUser=null;showTab('login');await refresh();VyroAuth.updateAccountLinks();}catch(e){S.notice(e.message);}});
+  $('refreshLibrary').addEventListener('click',library);$('previousLibrary').addEventListener('click',()=>{if(libraryPage>1){libraryPage--;library();}});$('nextLibrary').addEventListener('click',()=>{libraryPage++;library();});
+  $('libraryRoot').addEventListener('click',async e=>{const b=e.target.closest('[data-download],[data-open-product]');if(!b)return;b.disabled=true;try{const d=await S.request('/api/download',{method:'POST',body:b.dataset.download?{asset_id:b.dataset.download}:{product_id:b.dataset.openProduct,external:true}});const url=S.safeURL(d.url);if(!url)throw new Error('The download link was not valid.');location.assign(url);}catch(err){S.notice(err.message);}finally{b.disabled=false;}});
+  showTab(new URLSearchParams(location.search).get('mode')==='login'?'login':'signup');
+  try{if(VyroAuth.configured()){const client=VyroAuth.client();client.auth.onAuthStateChange((event,s)=>{if((s?.user?.id||null)!==lastUser){clearPrivate();$('accountPanel').hidden=true;}if(event==='PASSWORD_RECOVERY'){recovery=true;showTab('password');}setTimeout(refresh,0);});}}catch(e){message(e.message,'error');}
+  if(new URLSearchParams(location.search).get('recovery')==='1'){recovery=true;showTab('password');}
+  window.addEventListener('pagehide',()=>{clearPrivate();$('accountPanel').hidden=true;});
+  window.addEventListener('pageshow',e=>{if(e.persisted){lastUser=null;clearPrivate();refresh();}});
+  refresh();
 })();
