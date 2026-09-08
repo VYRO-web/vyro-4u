@@ -115,7 +115,9 @@
     const stats = [["Products", total, "Across your catalog"], ["Active products", active, "Published in the store"], ["Draft products", drafts, "Work in progress"], ["Paid orders", paid, number(orders) + " total orders"]];
     $("overviewStats").innerHTML = stats.map((item) => '<article class="admin-stat"><span class="admin-stat-label">' + item[0] + '</span><strong>' + number(item[1]) + '</strong><small>' + item[2] + "</small></article>").join("");
     const payments = payload.configured || {};
-    $("readinessOverview").innerHTML = '<div class="admin-check-row"><span>Products missing paid files</span><strong>' + number(getMetric(value, ["products_missing_files", "missing_files"])) + '</strong></div><div class="admin-check-row"><span>Products missing payment setup</span><strong>' + number(getMetric(value, ["products_missing_payment", "products_missing_payment_configuration", "missing_payment_configuration", "missing_payment"])) + '</strong></div><div class="admin-check-row"><span>Whop connection</span>' + chip(payments.payments ? (payments.sandbox ? "Sandbox configured" : "Live configured") : "Payment setup required", payments.payments ? "good" : "warn") + '</div><p class="admin-help admin-space-after">Checkout also verifies the current price, delivery and payment configuration on the server.</p>';
+    $("readinessOverview").innerHTML = payments.free_mode
+      ? '<div class="admin-check-row"><span>Bundled PDF products</span><strong>' + number(getMetric(value, ["total_products", "products"])) + '</strong></div><div class="admin-check-row"><span>Payments</span>' + chip("Disabled", "good") + '</div><div class="admin-check-row"><span>Store mode</span>' + chip("Free mode active", "good") + '</div><p class="admin-help admin-space-after">The current release serves the eight bundled guides directly. Commerce can be enabled later without rebuilding the visual storefront.</p>'
+      : '<div class="admin-check-row"><span>Products missing paid files</span><strong>' + number(getMetric(value, ["products_missing_files", "missing_files"])) + '</strong></div><div class="admin-check-row"><span>Products missing payment setup</span><strong>' + number(getMetric(value, ["products_missing_payment", "products_missing_payment_configuration", "missing_payment_configuration", "missing_payment"])) + '</strong></div><div class="admin-check-row"><span>Whop connection</span>' + chip(payments.payments ? (payments.sandbox ? "Sandbox configured" : "Live configured") : "Payment setup required", payments.payments ? "good" : "warn") + '</div><p class="admin-help admin-space-after">Checkout also verifies the current price, delivery and payment configuration on the server.</p>';
     let revenues = value.revenue_by_currency || value.revenue || [];
     if (!Array.isArray(revenues) && revenues && typeof revenues === "object") revenues = Object.entries(revenues).map(([currency, amount]) => ({ currency, revenue: amount }));
     $("revenueOverview").innerHTML = list(revenues).length ? list(revenues).map((row) => '<div class="admin-revenue-row"><span>' + escape(row.currency) + '</span><strong>' + escape(money(row.total_amount ?? row.revenue ?? row.total ?? row.amount, row.currency)) + '</strong></div>').join("") : '<div class="admin-empty">No recorded paid revenue yet.</div>';
@@ -124,8 +126,16 @@
     $("orderList").innerHTML = renderOrders(recent, false);
     $("lastUpdated").textContent = "Updated " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
-  async function loadOverview() { state.overview = await api("overview"); renderOverview(state.overview); }
+  async function loadOverview() {
+    if (window.VYRO_FREE_MODE?.enabled && window.VYRO_STATIC_CATALOG) {
+      const products = window.VYRO_STATIC_CATALOG.products || [];
+      state.overview = { overview: { total_products: products.length, active_products: products.length, draft_products: 0, paid_orders: 0, total_orders: 0, missing_files: 0, missing_payment_configuration: 0, revenue_by_currency: [] }, recent_orders: [], configured: { payments: false, sandbox: true, free_mode: true } };
+      renderOverview(state.overview); return;
+    }
+    state.overview = await api("overview"); renderOverview(state.overview);
+  }
   function productReadiness(product, detail) {
+    if (window.VYRO_FREE_MODE?.enabled && product.free_file) return { ready: true, reasons: ["Free PDF is bundled with this release."] };
     if (product.checkout_ready === true || product.is_purchasable === true || product.readiness && product.readiness.ready) return { ready: true, reasons: ["The last server check passed. Checkout verifies this again before accepting payment."] };
     if (Array.isArray(product.readiness_reasons)) return { ready: false, reasons: product.readiness_reasons };
     if (product.readiness && Array.isArray(product.readiness.reasons)) return { ready: false, reasons: product.readiness.reasons };
@@ -148,8 +158,12 @@
     $("productList").innerHTML = state.products.length ? state.products.map((product) => {
       const category = state.categories.find((item) => item.id === product.category_id);
       const ready = productReadiness(product);
-      return '<article class="admin-product-row">' + cover(product.cover_path) + '<div class="admin-product-info"><h3>' + escape(product.name) + '</h3><p>' + escape(category ? category.name : "Uncategorized") + ' · ' + escape(labels[product.product_type] || product.product_type) + ' · Position ' + escape(product.display_order || 0) + '</p><div class="admin-badges">' + chip(labels[product.status] || product.status, product.status === "active" ? "good" : "muted") + chip(ready.ready ? "Checkout ready" : !product.whop_plan_id || !product.whop_product_id ? "Payment setup required" : "Review readiness", ready.ready ? "good" : "warn") + (product.featured ? chip("Featured") : "") + '</div></div><div class="admin-product-end"><strong>' + escape(money(product.price_amount, product.currency)) + '</strong><button class="btn btn-ghost btn-sm" type="button" data-edit-product="' + escape(product.id) + '" aria-label="Edit ' + escape(product.name) + '">Manage →</button></div></article>';
-    }).join("") : '<div class="admin-empty">No products match these filters. Create a product or change your search.</div>';
+      const action = window.VYRO_FREE_MODE?.enabled
+        ? '<a class="btn btn-ghost btn-sm" href="/product.html?id=' + encodeURIComponent(product.slug || product.id) + '">View live →</a>'
+        : '<button class="btn btn-ghost btn-sm" type="button" data-edit-product="' + escape(product.id) + '" aria-label="Edit ' + escape(product.name) + '">Manage →</button>';
+      const readinessChip = window.VYRO_FREE_MODE?.enabled ? chip("PDF ready", "good") : chip(ready.ready ? "Checkout ready" : !product.whop_plan_id || !product.whop_product_id ? "Payment setup required" : "Review readiness", ready.ready ? "good" : "warn");
+      return '<article class="admin-product-row">' + cover(product.cover_path) + '<div class="admin-product-info"><h3>' + escape(product.name) + '</h3><p>' + escape(category ? category.name : "Uncategorized") + ' · ' + escape(labels[product.product_type] || product.product_type) + ' · Position ' + escape(product.display_order || 0) + '</p><div class="admin-badges">' + chip(labels[product.status] || product.status, product.status === "active" ? "good" : "muted") + readinessChip + (product.featured ? chip("Featured") : "") + '</div></div><div class="admin-product-end"><strong>' + escape(window.VYRO_FREE_MODE?.enabled ? "Free" : money(product.price_amount, product.currency)) + '</strong>' + action + '</div></article>';
+    }).join("") : '<div class="admin-empty">No products match these filters.</div>';
     $("productPage").textContent = "Page " + state.page;
     $("previousProducts").disabled = state.page <= 1;
     $("nextProducts").disabled = !state.hasMore;
@@ -159,6 +173,11 @@
     query.set("page", String(page || 1));
     $("productList").setAttribute("aria-busy", "true");
     try {
+      if (window.VYRO_FREE_MODE?.enabled && window.VYRO_STATIC_CATALOG) {
+        const q = String(query.get("q") || "").toLowerCase().trim(), status = query.get("status"), type = query.get("product_type");
+        state.products = list(window.VYRO_STATIC_CATALOG.products).filter(p => (!q || (p.name + " " + p.slug).toLowerCase().includes(q)) && (!status || p.status === status) && (!type || p.product_type === type));
+        state.page = 1; state.hasMore = false; renderProducts(); return;
+      }
       const data = await api("products?" + query.toString());
       state.products = list(data.products); state.page = page || 1; state.hasMore = !!data.has_more;
       renderProducts();
@@ -167,10 +186,13 @@
   function renderCategories() {
     $("categoryList").innerHTML = state.categories.length ? state.categories.map((category) => {
       const parent = state.categories.find((item) => item.id === category.parent_id);
-      return '<article class="admin-category-row"><span class="admin-category-rank">' + escape(category.display_order || 0) + '</span><div><h3>' + escape(parent ? parent.name + " / " : "") + escape(category.name) + '</h3><p>' + escape(category.description || "No description") + '</p><p>/' + escape(category.slug) + '</p></div>' + chip(category.active ? "Visible" : "Hidden", category.active ? "good" : "muted") + '<button class="btn btn-ghost btn-sm" type="button" data-edit-category="' + escape(category.id) + '" aria-label="Edit ' + escape(category.name) + '">Edit</button></article>';
+      return '<article class="admin-category-row"><span class="admin-category-rank">' + escape(category.display_order || 0) + '</span><div><h3>' + escape(parent ? parent.name + " / " : "") + escape(category.name) + '</h3><p>' + escape(category.description || "No description") + '</p><p>/' + escape(category.slug) + '</p></div>' + chip(category.active ? "Visible" : "Hidden", category.active ? "good" : "muted") + (window.VYRO_FREE_MODE?.enabled ? '' : '<button class="btn btn-ghost btn-sm" type="button" data-edit-category="' + escape(category.id) + '" aria-label="Edit ' + escape(category.name) + '">Edit</button>') + '</article>';
     }).join("") : '<div class="admin-empty">Create your first category to organize the store.</div>';
   }
-  async function loadCategories() { const data = await api("categories"); state.categories = list(data.categories); renderCategories(); }
+  async function loadCategories() {
+    if (window.VYRO_FREE_MODE?.enabled && window.VYRO_STATIC_CATALOG) { state.categories = list(window.VYRO_STATIC_CATALOG.categories); renderCategories(); return; }
+    const data = await api("categories"); state.categories = list(data.categories); renderCategories();
+  }
   function field(key, title, value, options) {
     const settings = { ...(options || {}) };
     const fieldLimits = { name: 200, slug: 100, category_slug: 120, subcategory: 120, short_description: 1000, full_description: 30000, who_for: 3000, cover_path: 2048, version: 80, release_notes: 15000 };
@@ -395,6 +417,11 @@
       await loadOverview();
       await loadCategories();
       await loadProducts(1);
+      if (window.VYRO_FREE_MODE?.enabled) {
+        $("newProduct").hidden = true; $("newCategory").hidden = true;
+        const reconcile = $("reconcileForm"); if (reconcile) reconcile.hidden = true;
+        message("Free mode is active. The eight bundled PDF products are live and payments are disabled. Catalog editing will be re-enabled when you switch back to the commerce backend.");
+      }
       $("adminGate").hidden = true; $("adminShell").hidden = false;
     } catch (error) {
       $("gateMessage").textContent = error.status === 403 ? "This account does not have store administrator permissions. The store owner must assign your role securely in Supabase." : error.message || "Store administration is unavailable. Check the setup and try again.";

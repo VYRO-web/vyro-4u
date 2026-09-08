@@ -1,15 +1,39 @@
 (function(){
   'use strict';
   const S=VyroStore,C={data:null,owned:new Set()};
-  C.ready=S.request('/api/catalog',{authenticated:false}).then(d=>{if(!Array.isArray(d.products)||!Array.isArray(d.categories))throw new Error('Catalog unavailable');C.data=d;return d;});C.ready.catch(()=>{});
+  const staticCatalog=()=>window.VYRO_STATIC_CATALOG||{categories:[],products:[]};
+  function normalizedStatic(){
+    const d=staticCatalog();
+    return {categories:(d.categories||[]).map(x=>({...x})),products:(d.products||[]).map(x=>({...x,checkout_ready:false}))};
+  }
+  async function loadCatalog(){
+    if(S.freeMode())return normalizedStatic();
+    try{
+      const d=await S.request('/api/catalog',{authenticated:false});
+      if(!Array.isArray(d.products)||!Array.isArray(d.categories))throw new Error('Catalog unavailable');
+      const localBySlug=new Map((staticCatalog().products||[]).map(p=>[p.slug,p]));
+      d.products=d.products.map(p=>({...localBySlug.get(p.slug),...p,free_file:localBySlug.get(p.slug)?.free_file||p.free_file}));
+      return d;
+    }catch(error){
+      const fallback=normalizedStatic();
+      if(fallback.products.length)return fallback;
+      throw error;
+    }
+  }
+  C.ready=loadCatalog().then(d=>{C.data=d;return d;});C.ready.catch(()=>{});
   let identity,ownershipGeneration=0;
-  C.libraryReady=(async()=>{const generation=ownershipGeneration,s=await S.session();identity=s?.user?.id||null;if(!s)return;let page=1,more=true;while(more){const d=await S.request('/api/library?page='+page);const current=(await S.session())?.user?.id;if(current!==identity||generation!==ownershipGeneration)return;for(const e of d.entitlements||[])if(e.status==='active'&&(!e.expires_at||new Date(e.expires_at)>new Date()))C.owned.add(e.product_id);more=d.has_more===true&&++page<=100;}})().catch(()=>{});
+  C.libraryReady=(async()=>{
+    if(S.freeMode())return;
+    const generation=ownershipGeneration,s=await S.session();identity=s?.user?.id||null;if(!s)return;let page=1,more=true;
+    while(more){const d=await S.request('/api/library?page='+page);const current=(await S.session())?.user?.id;if(current!==identity||generation!==ownershipGeneration)return;for(const e of d.entitlements||[])if(e.status==='active'&&(!e.expires_at||new Date(e.expires_at)>new Date()))C.owned.add(e.product_id);more=d.has_more===true&&++page<=100;}
+  })().catch(()=>{});
   try{VyroAuth.client().auth.onAuthStateChange((_event,s)=>{const next=s?.user?.id||null;if(identity!==undefined&&next!==identity){ownershipGeneration++;C.owned.clear();identity=next;if(!document.getElementById('accountPanel'))location.reload();}});}catch{/* Public catalog remains usable if authentication is unavailable. */}
   C.productURL=p=>'/product.html?id='+encodeURIComponent(p.slug||p.id);
   C.typeLabel=p=>({digital_file:'Digital download',software:'Software',bundle:'Bundle',external_access:'Online access'}[p.product_type]||'Digital product');
-  C.availability=p=>C.owned.has(p.id)?'Owned':p.status==='coming_soon'?'Coming Soon':p.checkout_ready?'Available':'Not available yet';
-  C.priceHTML=p=>'<span class="price-now">'+S.escape(S.money(p.price_amount,p.currency))+'</span>'+(Number(p.compare_at_price)>Number(p.price_amount)?'<span class="price-old">'+S.escape(S.money(p.compare_at_price,p.currency))+'</span>':'');
-  C.card=p=>{const cat=C.data.categories.find(c=>c.id===p.category_id),cover=S.safeURL(p.cover_path),owned=C.owned.has(p.id);return `<article class="product-card"><a href="${C.productURL(p)}" aria-label="${S.escape(p.name)}"><div class="cover product-image-cover">${cover?`<img src="${S.escape(cover)}" alt="${S.escape(p.name)}" width="1086" height="1448" loading="lazy" decoding="async">`:'<span class="cover-title">Cover coming soon</span>'}</div></a><div class="product-body"><div class="commerce-badges"><span class="badge">${C.availability(p)}</span><span class="product-cat">${S.escape(C.typeLabel(p))}</span>${p.checkout_ready&&Number(p.compare_at_price)>Number(p.price_amount)?'<span class="badge badge-sale">Sale</span>':''}</div><span class="product-cat">${S.escape(cat?.name)}</span><a href="${C.productURL(p)}"><h3 class="product-name">${S.escape(p.name)}</h3></a><p class="product-desc">${S.escape(p.short_description)}</p><div class="product-price-row">${C.priceHTML(p)}</div><div class="product-actions"><a class="btn btn-ghost btn-sm" href="${owned?'/account.html':C.productURL(p)}">${owned?'My Library':'View Product'}</a>${p.checkout_ready&&!owned?`<button class="btn btn-primary btn-sm" data-buy="${S.escape(p.id)}">Buy Now</button>`:''}<button class="btn btn-secondary btn-sm" data-add="${S.escape(p.id)}">Save to Cart</button></div></div></article>`;};
+  C.isFree=p=>S.freeMode()&&!!S.freeFile(p);
+  C.availability=p=>C.isFree(p)?(window.VYRO_FREE_MODE?.label||'Free Access'):C.owned.has(p.id)?'Owned':p.status==='coming_soon'?'Coming Soon':p.checkout_ready?'Available':'Not available yet';
+  C.priceHTML=p=>C.isFree(p)?'<span class="price-now">Free</span><span class="price-old">'+S.escape(S.money(p.price_amount,p.currency))+'</span>':'<span class="price-now">'+S.escape(S.money(p.price_amount,p.currency))+'</span>'+(Number(p.compare_at_price)>Number(p.price_amount)?'<span class="price-old">'+S.escape(S.money(p.compare_at_price,p.currency))+'</span>':'');
+  C.card=p=>{const cat=C.data.categories.find(c=>c.id===p.category_id),cover=S.safeURL(p.cover_path),owned=C.owned.has(p.id),free=C.isFree(p);return `<article class="product-card"><a href="${C.productURL(p)}" aria-label="${S.escape(p.name)}"><div class="cover product-image-cover">${cover?`<img src="${S.escape(cover)}" alt="${S.escape(p.name)}" width="1086" height="1448" loading="lazy" decoding="async">`:'<span class="cover-title">Cover coming soon</span>'}</div></a><div class="product-body"><div class="commerce-badges"><span class="badge">${C.availability(p)}</span><span class="product-cat">${S.escape(C.typeLabel(p))}</span>${!free&&p.checkout_ready&&Number(p.compare_at_price)>Number(p.price_amount)?'<span class="badge badge-sale">Sale</span>':''}</div><span class="product-cat">${S.escape(cat?.name||'')}</span><a href="${C.productURL(p)}"><h3 class="product-name">${S.escape(p.name)}</h3></a><p class="product-desc">${S.escape(p.short_description)}</p><div class="product-price-row">${C.priceHTML(p)}</div><div class="product-actions"><a class="btn btn-ghost btn-sm" href="${owned&&!free?'/account.html':C.productURL(p)}">${owned&&!free?'My Library':'View Product'}</a>${free?`<button class="btn btn-primary btn-sm" data-buy="${S.escape(p.id)}">Download PDF</button>`:p.checkout_ready&&!owned?`<button class="btn btn-primary btn-sm" data-buy="${S.escape(p.id)}">Buy Now</button>`:''}<button class="btn btn-secondary btn-sm" data-add="${S.escape(p.id)}">Save to Cart</button></div></div></article>`;};
   window.VyroCatalog=C;
   document.addEventListener('DOMContentLoaded',async()=>{try{const d=await C.ready,links=d.categories.map(c=>`<a href="/shop.html?category=${encodeURIComponent(c.slug)}">${S.escape(c.name)}</a>`).join('');document.querySelectorAll('[data-category-nav],[data-category-footer]').forEach(e=>e.innerHTML=links);
     const cats=document.getElementById('categoryGrid');if(cats)cats.innerHTML=d.categories.map(c=>`<a class="cat-card" href="/shop.html?category=${encodeURIComponent(c.slug)}"><h3>${S.escape(c.name)}</h3><p>${S.escape(c.description)}</p><span class="cat-arrow">Browse ${S.escape(c.name)}</span></a>`).join('');

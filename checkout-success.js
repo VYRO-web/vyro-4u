@@ -1,5 +1,12 @@
 (async function(){
-  const S=VyroStore,status=document.getElementById('checkoutStatus'),root=document.getElementById('orderResult'),id=new URLSearchParams(location.search).get('order_id');let attempts=0,timer;
+  const S=VyroStore,status=document.getElementById('checkoutStatus'),root=document.getElementById('orderResult');
+  if(S.freeMode()){
+    status.textContent='Payments are currently disabled. VYRO guides are available as free PDF downloads.';
+    root.innerHTML='<p><a class="btn btn-primary" href="shop.html">Browse free guides</a></p>';
+    const b=document.getElementById('checkAgain'); if(b)b.hidden=true;
+    return;
+  }
+  const id=new URLSearchParams(location.search).get('order_id');let attempts=0,timer;
   if(!id){status.textContent='No order was specified. Visiting this page does not confirm payment.';return;}
   if(!/^[0-9a-f-]{36}$/i.test(id)){status.textContent='This order reference is not valid.';return;}
   async function check(){try{if(!await S.session()){status.innerHTML='Sign in to check this order. <a class="text-link" href="'+S.escape(S.loginURL())+'">Sign in</a>';return;}

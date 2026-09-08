@@ -15,10 +15,13 @@
   }
   function notice(message){let e=document.getElementById('vyro-toast');if(!e){e=document.createElement('div');e.id='vyro-toast';e.className='vyro-toast';e.setAttribute('role','status');document.body.append(e);}e.textContent=message;e.classList.add('vyro-toast--visible');clearTimeout(e._timer);e._timer=setTimeout(()=>e.classList.remove('vyro-toast--visible'),6000);}
   const loginURL=(path=location.pathname+location.search)=>'/account.html?mode=login&returnTo='+encodeURIComponent(path);
-  async function checkout(id,button){const label=button?.textContent;if(button){button.disabled=true;button.textContent='Preparing checkout…';}try{
-    if(!await session()){const p=window.VyroCatalog?.data?.products.find(p=>p.id===id);location.assign(loginURL('/product.html?id='+encodeURIComponent(p?.slug||id)+'&intent=buy'));return;}
+  const freeMode=()=>window.VYRO_FREE_MODE?.enabled===true;
+  function freeFile(product){const value=product?.free_file;if(!value)return '';try{const u=new URL(value,location.origin);return u.origin===location.origin&&u.protocol===location.protocol?u.href:'';}catch{return '';}}
+  function downloadFree(product,button){const label=button?.textContent;if(button){button.disabled=true;button.textContent='Opening PDF…';}try{const u=freeFile(product);if(!u)throw new Error('This guide file is not available yet.');window.open(u,'_blank','noopener');}catch(e){notice(e.message);}finally{if(button){button.disabled=false;button.textContent=label;}}}
+  async function checkout(id,button){const p=window.VyroCatalog?.data?.products.find(p=>p.id===id);if(freeMode()){downloadFree(p,button);return;}const label=button?.textContent;if(button){button.disabled=true;button.textContent='Preparing checkout…';}try{
+    if(!await session()){location.assign(loginURL('/product.html?id='+encodeURIComponent(p?.slug||id)+'&intent=buy'));return;}
     const d=await request('/api/checkout',{method:'POST',body:{product_id:id}}),u=new URL(d.checkout_url);
     if(u.protocol!=='https:'||!(u.hostname==='whop.com'||u.hostname.endsWith('.whop.com')))throw new Error('The checkout link was not valid.');location.assign(u.href);
   }catch(e){notice(e.message);}finally{if(button){button.disabled=false;button.textContent=label;}}}
-  window.VyroStore={escape,safeURL,money,session,request,notice,loginURL,checkout};
+  window.VyroStore={escape,safeURL,money,session,request,notice,loginURL,checkout,freeMode,freeFile,downloadFree};
 })();
